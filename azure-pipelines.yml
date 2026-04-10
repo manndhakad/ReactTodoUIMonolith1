@@ -1,6 +1,6 @@
 trigger: none
 
-pool: manojs
+pool: app
 
 stages:
   - stage: Build
