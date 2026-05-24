@@ -22,8 +22,23 @@ stages:
               PathtoPublish: '$(Build.ArtifactStagingDirectory)'
               ArtifactName: 'drop'
               publishLocation: 'Container'
-          
 
+  - stage: sonarqubeanaylsis
+    displayName: sonarqubeScan
+    jobs:
+      - job: 
+        steps:
+         - task: SonarQubePrepare@8
+           inputs:
+             SonarQube: 'sonarq'
+             scannerMode: 'cli'
+             configMode: 'manual'
+             cliProjectKey: 'bankapp'
+             cliProjectName: 'bankapp'
+             cliSources: '.'
+         - task: SonarQubeAnalyze@8
+           inputs:
+             jdkversion: 'JAVA_HOME_17_X64'
 
   # - stage: Deploy
   #   jobs:
