@@ -1,52 +1,86 @@
 trigger: none
 
-pool: appmanoj
+pool:
+  name: appmanoj
 
 stages:
   - stage: Build
+    displayName: Build Stage
+
     jobs:
-      - job: 
+      - job: BuildJob
+        displayName: Build Application
+
         steps:
-          - task: NodeTaskRunnerInstaller@0
+
+          # SonarQube Prepare
+          - task: SonarQubePrepare@8
+            displayName: "sonarqubeAnaylsis"
             inputs:
-              nodeVersion: '6'
+              SonarQube: 'sonarq'
+              scannerMode: 'cli'
+              configMode: 'manual'
+              cliProjectKey: 'bankapp'
+              cliProjectName: 'bankapp'
+              cliSources: '.'
+
+          # SonarQube Analyze
+          - task: SonarQubeAnalyze@8
+            displayName: "sonarqubeScan"
+            inputs:
+              jdkversion: 'JAVA_HOME_17_X64'
+
+          # Install Node.js
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '18.x'
+            displayName: 'Install Node.js'
+
+          # Install NPM packages
           - task: Npm@1
+            displayName: 'NPM Install'
             inputs:
               command: 'install'
+
+          # Build Application
           - task: Npm@1
+            displayName: 'NPM Build'
             inputs:
               command: 'custom'
               customCommand: 'run build'
+
+          # Copy build files
+          - task: CopyFiles@2
+            displayName: 'Copy Build Files'
+            inputs:
+              SourceFolder: 'dist'
+              Contents: '**'
+              TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+          # Publish Artifact
           - task: PublishBuildArtifacts@1
+            displayName: 'Publish Artifacts'
             inputs:
               PathtoPublish: '$(Build.ArtifactStagingDirectory)'
               ArtifactName: 'drop'
               publishLocation: 'Container'
 
-  - stage: sonarqubeanaylsis
-    displayName: sonarqubeScan
-    jobs:
-      - job: 
-        steps:
-         - task: SonarQubePrepare@8
-           inputs:
-             SonarQube: 'sonarq'
-             scannerMode: 'cli'
-             configMode: 'manual'
-             cliProjectKey: 'bankapp'
-             cliProjectName: 'bankapp'
-             cliSources: '.'
-         - task: SonarQubeAnalyze@8
-           inputs:
-             jdkversion: 'JAVA_HOME_17_X64'
+# ---------------- DEPLOY STAGE ----------------
 
-  # - stage: Deploy
-  #   jobs:
-  #     - job: 
-  #       steps:
-  #         - task: DownloadBuildArtifacts@1
-  #           inputs:
-  #             buildType: 'current'
-  #             downloadType: 'single'
-  #             artifactName: 'drop'
-  #             downloadPath: '$(System.ArtifactsDirectory)'
+#  - stage: Deploy
+#    displayName: Deploy Stage
+#
+#    dependsOn: Build
+#
+#    jobs:
+#      - job: DeployJob
+#        displayName: Deploy Application
+#
+#        steps:
+#
+#          - task: DownloadBuildArtifacts@1
+#            inputs:
+#              buildType: 'current'
+#              downloadType: 'single'
+#              artifactName: 'drop'
+#              downloadPath: '$(System.ArtifactsDirectory)'
